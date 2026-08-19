@@ -1,0 +1,7 @@
+```
+index=wineventlog sourcetype=WinEventLog:Security EventCode=4625
+| stats count by Account_Name, Source_Network_Address
+| where count > 5
+| table Account_Name, Source_Network_Address, count
+| rename Account_Name as "User Account", Source_Network_Address as "Source IP", count as "Failed Attempts"
+```

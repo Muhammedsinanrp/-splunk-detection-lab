@@ -1,0 +1,8 @@
+```
+index=wineventlog sourcetype=WinEventLog:Security 
+EventCode=4672
+| lookup user_privilege_lookup Account_Name OUTPUT Privilege_Level
+| where Privilege_Level != "Standard"
+| table _time, Account_Name, Workstation_Name, Source_Network_Address
+| rename Account_Name as "User Account", Workstation_Name as "Workstation"
+```

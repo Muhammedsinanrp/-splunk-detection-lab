@@ -1,0 +1,9 @@
+```
+index=wineventlog sourcetype=WinEventLog:Security 
+(EventCode=4625 OR EventCode=4624)
+| transaction Account_Name maxspan=5m
+| where mvcount(EventCode) > 1
+| search EventCode=4625 AND EventCode=4624
+| table _time, Account_Name, Workstation_Name, Source_Network_Address, EventCode
+| rename Account_Name as "User Account", Workstation_Name as "Target Machine"
+```

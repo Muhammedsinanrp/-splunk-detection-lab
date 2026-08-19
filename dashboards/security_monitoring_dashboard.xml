@@ -1,0 +1,62 @@
+<!--
+Security Monitoring Dashboard - Splunk Simple XML
+
+Replace this with your actual dashboard export from:
+Splunk Web > Dashboards > [Your Dashboard] > Edit > Source
+
+Panels to include:
+  1. Failed Logins Over Time      -> timechart count by src_ip on EventCode=4625
+  2. Top Attack Sources           -> top limit=10 Source_Network_Address
+  3. Lateral Movement Alerts      -> search on "Lateral Movement Detected" notable events
+  4. Privilege Escalation Alerts  -> search on "Privilege Escalation Detected" notable events
+  5. Outbound Connections Top 10  -> top limit=10 DestinationIp
+  6. Event Code Distribution      -> chart count by EventCode
+-->
+<form>
+  <label>Security Monitoring</label>
+  <fieldset submitButton="false">
+    <input type="time" token="time_tok">
+      <label>Time Range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Failed Logins Over Time</title>
+      <chart>
+        <search>
+          <query>index=wineventlog sourcetype=WinEventLog:Security EventCode=4625 | timechart count</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Top Attack Sources</title>
+      <table>
+        <search>
+          <query>index=wineventlog sourcetype=WinEventLog:Security EventCode=4625 | top limit=10 Source_Network_Address</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Event Code Distribution</title>
+      <chart>
+        <search>
+          <query>index=wineventlog sourcetype=WinEventLog:Security | chart count by EventCode</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+      </chart>
+    </panel>
+  </row>
+</form>

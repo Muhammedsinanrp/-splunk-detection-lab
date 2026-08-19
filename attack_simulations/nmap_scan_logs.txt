@@ -1,0 +1,14 @@
+# Sample Nmap reconnaissance scan against Windows target
+# Replace with your actual captured output.
+
+nmap -sS -sV -O 192.168.1.50
+
+Starting Nmap ( https://nmap.org )
+Nmap scan report for 192.168.1.50
+Host is up (0.0021s latency).
+PORT     STATE SERVICE       VERSION
+135/tcp  open  msrpc         Microsoft Windows RPC
+139/tcp  open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp  open  microsoft-ds  Windows Server 2019
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+Service Info: OS: Windows

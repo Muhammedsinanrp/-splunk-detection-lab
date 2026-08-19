@@ -1,0 +1,7 @@
+```
+index=sysmon sourcetype=XmlWinEventLog:Microsoft-Windows-Sysmon/Operational EventCode=3
+| stats count, earliest(_time) as first, latest(_time) as last by Image, DestinationIp
+| eval duration = last - first
+| where count > 10 AND duration < 300
+| table Image, DestinationIp, count, duration
+```

