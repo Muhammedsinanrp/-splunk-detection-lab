@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  splunk:
+    image: splunk/splunk:9.2.0
+    container_name: splunk_soc_detection_lab
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_PASSWORD=SplunkAdmin2026!
+      - SPLUNK_LISTEN_PORT=9997
+    ports:
+      - "8000:8000"   # Splunk Web UI
+      - "9997:9997"   # Splunk Ingestion (Forwarder Receiver)
+      - "8089:8089"   # Splunk Management / REST API
+    volumes:
+      - splunk-var:/opt/splunk/var
+      - splunk-etc:/opt/splunk/etc
+      - ./configs/lookups:/opt/splunk/etc/apps/soc_detection_lab/lookups
+      - ./attack_simulations/sample_telemetry:/tmp/sample_telemetry:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  splunk-var:
+  splunk-etc:

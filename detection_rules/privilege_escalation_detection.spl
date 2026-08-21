@@ -1,8 +1,30 @@
-```
-index=wineventlog sourcetype=WinEventLog:Security 
+# ==============================================================================
+# Detection Rule: Privilege Escalation — Unauthorized Special Privilege Assignment
+# MITRE ATT&CK: T1078 (Valid Accounts), T1068 (Exploitation for Privilege Escalation)
+# Severity: Critical | Tactic: Privilege Escalation
+# Target Data Sources: Windows Security Event Log (EventCode 4672, 4624)
+# ==============================================================================
+
+# --- Description ---
+# Event ID 4672 is logged whenever an account logs on with special privileges assigned 
+# (e.g., SeDebugPrivilege, SeTcbPrivilege, SeImpersonatePrivilege, SeBackupPrivilege).
+# This rule cross-references logons against the enterprise user privilege baseline 
+# (`user_privilege_lookup.csv`). If a standard/non-privileged employee account receives 
+# admin-level privileges, an alert is triggered immediately.
+
+# --- Splunk Query (SPL) ---
+index=wineventlog (sourcetype="WinEventLog:Security" OR sourcetype="XmlWinEventLog:Security")
 EventCode=4672
-| lookup user_privilege_lookup Account_Name OUTPUT Privilege_Level
-| where Privilege_Level != "Standard"
-| table _time, Account_Name, Workstation_Name, Source_Network_Address
-| rename Account_Name as "User Account", Workstation_Name as "Workstation"
-```
+NOT Account_Name IN ("SYSTEM", "LOCAL SERVICE", "NETWORK SERVICE", "ANONYMOUS LOGON", "*$")
+| lookup user_privilege_lookup Account_Name OUTPUT Department, Privilege_Level, Notes
+| where Privilege_Level != "DomainAdmin" AND Privilege_Level != "LocalAdmin"
+| eval Target_Host = coalesce(ComputerName, host, Computer)
+| eval Source_IP = coalesce(IpAddress, Source_Network_Address, "Local / Console")
+| table _time, Account_Name, Department, Privilege_Level, Target_Host, Source_IP, PrivilegeList, Notes
+| rename Account_Name as "User Account", Target_Host as "Target Machine", PrivilegeList as "Assigned Rights"
+
+# --- False Positives & Tuning ---
+# 1. Planned temporary privilege elevation (e.g., via PAM / CyberArk / JIT Access).
+#    Mitigation: Ingest PAM session checkout events to correlate legitimate administrative sessions.
+# 2. Service accounts with elevated rights that were recently provisioned.
+#    Mitigation: Ensure `user_privilege_lookup.csv` is synced with Active Directory OU changes.

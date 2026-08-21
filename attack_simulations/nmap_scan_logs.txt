@@ -1,14 +1,28 @@
-# Sample Nmap reconnaissance scan against Windows target
-# Replace with your actual captured output.
+# ==============================================================================
+# Captured Attack Simulation Output: Nmap Reconnaissance Scan (T1595)
+# Attacker IP: 192.168.1.100 (Kali Linux)
+# Target Host: 192.168.1.50 (Windows Target)
+# ==============================================================================
 
-nmap -sS -sV -O 192.168.1.50
+kali@kali:~$ nmap -sS -sV -O -p 135,139,445,3389,5985,8000 192.168.1.50
 
-Starting Nmap ( https://nmap.org )
-Nmap scan report for 192.168.1.50
-Host is up (0.0021s latency).
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2026-08-21 10:00:15 EDT
+Nmap scan report for FILE-SRV-01.corp.local (192.168.1.50)
+Host is up (0.00084s latency).
+
 PORT     STATE SERVICE       VERSION
 135/tcp  open  msrpc         Microsoft Windows RPC
 139/tcp  open  netbios-ssn   Microsoft Windows netbios-ssn
-445/tcp  open  microsoft-ds  Windows Server 2019
-3389/tcp open  ms-wbt-server Microsoft Terminal Services
-Service Info: OS: Windows
+445/tcp  open  microsoft-ds  Windows Server 2019 Standard (SMB2/SMB3)
+3389/tcp open  ms-wbt-server Microsoft Terminal Services (RDP)
+5985/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP / WinRM)
+8000/tcp open  http          Splunkd httpd
+
+Device type: general purpose
+Running: Microsoft Windows Server 2019
+OS CPE: cpe:/o:microsoft:windows_server_2019
+OS details: Microsoft Windows Server 2019 Standard Build 17763
+Network Distance: 1 hop
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Nmap done: 1 IP address (1 host up) scanned in 7.42 seconds

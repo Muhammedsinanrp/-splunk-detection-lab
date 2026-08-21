@@ -1,7 +1,34 @@
-```
-index=wineventlog sourcetype=WinEventLog:Security EventCode=4625
-| stats count by Account_Name, Source_Network_Address
-| where count > 5
-| table Account_Name, Source_Network_Address, count
-| rename Account_Name as "User Account", Source_Network_Address as "Source IP", count as "Failed Attempts"
-```
+# ==============================================================================
+# Detection Rule: Password Spraying & Brute Force Attack Detection
+# MITRE ATT&CK: T1110.001 (Password Guessing), T1110.003 (Password Spraying)
+# Severity: Medium to High | Tactic: Credential Access
+# Target Data Sources: Windows Security Event Log (EventCode 4625)
+# ==============================================================================
+
+# --- Description ---
+# Detects both vertical brute force (many attempts against one account) and horizontal 
+# password spraying (few attempts against many distinct accounts from the same source IP).
+# Tracks failure codes (e.g., 0xC000006A for bad password, 0xC0000064 for non-existent user).
+
+# --- Splunk Query (SPL) ---
+index=wineventlog (sourcetype="WinEventLog:Security" OR sourcetype="XmlWinEventLog:Security")
+EventCode=4625
+NOT Account_Name IN ("*$", "ANONYMOUS LOGON")
+| eval Source_IP = coalesce(IpAddress, Source_Network_Address, "Unknown")
+| eval Target_Host = coalesce(ComputerName, host, Computer)
+| bin _time span=5m
+| stats count as failed_attempts, 
+        dc(Account_Name) as distinct_users, 
+        values(Account_Name) as targeted_accounts,
+        values(Sub_Status) as failure_reasons,
+        values(Target_Host) as targeted_hosts
+        by _time, Source_IP
+| where failed_attempts >= 5 OR distinct_users >= 3
+| eval attack_type = if(distinct_users >= 3, "Password Spraying", "Targeted Brute Force")
+| table _time, Source_IP, attack_type, failed_attempts, distinct_users, targeted_accounts, targeted_hosts
+| sort - failed_attempts
+
+# --- False Positives & Tuning ---
+# 1. User with an expired domain password cached in mapped network drives or mobile devices.
+# 2. Automated service scripts with outdated service account credentials.
+#    Mitigation: Check if `distinct_users == 1` and Sub_Status == "0xC000006A" from internal workstation IP.

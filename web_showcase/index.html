@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Splunk SIEM Threat Detection Center &amp; SOC Lab</title>
+  <meta name="description" content="Interactive SIEM Threat Detection and Security Operations Center Lab showcasing Splunk SPL correlation rules, MITRE ATT&amp;CK mappings, and attack simulation telemetry.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="soc-header">
+    <div class="brand-section">
+      <div class="logo-badge">
+        <span>⚡</span> SPLUNK SOC
+      </div>
+      <div>
+        <h1 class="brand-title">Enterprise Threat Detection &amp; Response Center</h1>
+        <p class="brand-subtitle">SIEM Detection Engineering • MITRE ATT&amp;CK Framework • Live Telemetry</p>
+      </div>
+    </div>
+    <div class="header-status-group">
+      <div class="status-pill">
+        <span class="status-dot dot-green" id="soc-health-dot"></span>
+        <span id="soc-status-text">DEFCON 4 — MONITORING</span>
+      </div>
+      <div class="status-pill" id="live-clock">
+        UTC 00:00:00
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Body -->
+  <main class="main-container">
+
+    <!-- Interactive Adversary Emulation / Attack Simulator -->
+    <section class="sim-toolbar" aria-label="Adversary Emulation Suite">
+      <div class="sim-toolbar-info">
+        <h3><span>⚔️</span> Adversary Emulation Suite</h3>
+        <p>Trigger attack simulations to stream raw telemetry into the SIEM and observe detection triggers.</p>
+      </div>
+      <div class="sim-buttons">
+        <button class="sim-btn" id="btn-sim-bruteforce">
+          <span>🔓</span> Brute Force (T1110)
+        </button>
+        <button class="sim-btn" id="btn-sim-lateral">
+          <span>🚀</span> Lateral Move (T1021)
+        </button>
+        <button class="sim-btn" id="btn-sim-mimikatz">
+          <span>💀</span> Mimikatz LSASS (T1003)
+        </button>
+        <button class="sim-btn" id="btn-sim-c2">
+          <span>📡</span> C2 Beacon (T1071)
+        </button>
+        <button class="sim-btn sim-btn-danger" id="btn-sim-fullkillchain">
+          <span>🔥</span> Full Kill Chain
+        </button>
+        <button class="sim-btn sim-btn-reset" id="btn-sim-reset">
+          <span>🔄</span> Reset Lab
+        </button>
+      </div>
+    </section>
+
+    <!-- KPI Metric Status Cards -->
+    <section class="kpi-grid" aria-label="Security Metrics Overview">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-header">
+          <span class="kpi-title">Ingested Security Events</span>
+          <span class="kpi-icon">📊</span>
+        </div>
+        <div class="kpi-value" id="kpi-total-events">1,428</div>
+        <div class="kpi-subtext"><span>🟢</span> Windows Event Logs &amp; Sysmon</div>
+      </div>
+      <div class="kpi-card kpi-yellow">
+        <div class="kpi-header">
+          <span class="kpi-title">Failed Logons (4625)</span>
+          <span class="kpi-icon">⚠️</span>
+        </div>
+        <div class="kpi-value" id="kpi-failed-logons">28</div>
+        <div class="kpi-subtext" id="kpi-failed-subtext">Velocity: Normal (2 / 5m)</div>
+      </div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-header">
+          <span class="kpi-title">Active Threat Alerts</span>
+          <span class="kpi-icon">🚨</span>
+        </div>
+        <div class="kpi-value" id="kpi-active-alerts">3</div>
+        <div class="kpi-subtext" id="kpi-alerts-subtext">High / Critical Notable Events</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-header">
+          <span class="kpi-title">Monitored Endpoints</span>
+          <span class="kpi-icon">🛡️</span>
+        </div>
+        <div class="kpi-value" id="kpi-endpoints-count">5 / 5</div>
+        <div class="kpi-subtext"><span>✅</span> Universal Forwarders Online</div>
+      </div>
+    </section>
+
+    <!-- Row 1: Charts & Top Offender Tables -->
+    <section class="dashboard-grid">
+      <div class="card-panel">
+        <div class="panel-header">
+          <h2 class="panel-title"><span>📈</span> Failed Logons Velocity (EventCode 4625)</h2>
+          <span class="panel-badge">timechart span=5m</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-failed-logins"></canvas>
+        </div>
+      </div>
+
+      <div class="card-panel">
+        <div class="panel-header">
+          <h2 class="panel-title"><span>🎯</span> Top Attacking Source IPs</h2>
+          <span class="panel-badge">top limit=5 IpAddress</span>
+        </div>
+        <div class="table-responsive">
+          <table class="soc-table" id="table-top-sources">
+            <thead>
+              <tr>
+                <th>Source IP</th>
+                <th>Target User</th>
+                <th>Count</th>
+                <th>Risk Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Dynamic rows populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Row 2: Notable Alerts Queue Table -->
+    <section class="card-panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><span>🚨</span> Splunk Real-time Notable Security Alerts</h2>
+        <span class="panel-badge" id="alerts-count-badge">3 Notable Events</span>
+      </div>
+      <div class="table-responsive">
+        <table class="soc-table" id="table-alerts-queue">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Rule Name / Alert</th>
+              <th>Severity</th>
+              <th>MITRE Technique</th>
+              <th>Source / Target</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="alerts-tbody">
+            <!-- Dynamic alerts populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Interactive SPL Console -->
+    <section class="spl-console-card">
+      <div class="panel-header" style="margin-bottom: 1rem;">
+        <h2 class="panel-title"><span>🔍</span> Interactive SPL (Search Processing Language) Console</h2>
+        <span class="panel-badge">Search &amp; Reporting</span>
+      </div>
+      <div class="spl-controls">
+        <select class="spl-select" id="spl-preset-select" aria-label="Detection Rule Query Presets">
+          <option value="lateral_movement">Query: Lateral Movement (T1021.002)</option>
+          <option value="privilege_escalation">Query: Privilege Escalation (T1078 / 4672)</option>
+          <option value="brute_force">Query: Brute Force Password Spray (T1110)</option>
+          <option value="credential_dumping">Query: Mimikatz LSASS Process Access (T1003)</option>
+          <option value="c2_beaconing">Query: Outbound C2 Network Beaconing (T1071)</option>
+        </select>
+        <div class="spl-input-wrapper">
+          <input type="text" class="spl-input" id="spl-search-input" spellcheck="false" placeholder="Enter Splunk SPL search query..." value="index=wineventlog (EventCode=4625 OR EventCode=4624) | transaction Account_Name maxspan=10m">
+        </div>
+        <button class="spl-run-btn" id="btn-run-spl">
+          <span>▶</span> Run Search
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="soc-table" id="table-spl-results">
+          <thead id="spl-results-head">
+            <tr>
+              <th>_time</th>
+              <th>Host</th>
+              <th>User</th>
+              <th>EventCode</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="spl-results-body">
+            <!-- Dynamic search results -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MITRE ATT&CK Framework Heatmap -->
+    <section class="card-panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><span>🗺️</span> MITRE ATT&amp;CK Enterprise Coverage Matrix</h2>
+        <span class="panel-badge">SOC Detection Coverage: 100% Core Scenarios</span>
+      </div>
+      <div class="table-responsive">
+        <table class="soc-table" id="table-mitre-matrix">
+          <thead>
+            <tr>
+              <th>Reconnaissance</th>
+              <th>Credential Access</th>
+              <th>Privilege Escalation</th>
+              <th>Lateral Movement</th>
+              <th>Command &amp; Control</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="badge-mitre">T1595: Port Scan</div>
+                <div style="font-size:0.75rem; color:#10b981; margin-top:4px;">● Detected (Sysmon 3)</div>
+              </td>
+              <td>
+                <div class="badge-mitre">T1110: Brute Force</div>
+                <div class="badge-mitre" style="margin-top:4px;">T1003: LSASS Dump</div>
+                <div style="font-size:0.75rem; color:#ef4444; margin-top:4px;">● Alert Triggered</div>
+              </td>
+              <td>
+                <div class="badge-mitre">T1078: Valid Accounts</div>
+                <div class="badge-mitre" style="margin-top:4px;">T1068: Exploitation</div>
+                <div style="font-size:0.75rem; color:#ef4444; margin-top:4px;">● Alert Triggered</div>
+              </td>
+              <td>
+                <div class="badge-mitre">T1021: SMB Remote</div>
+                <div class="badge-mitre" style="margin-top:4px;">T1550: Pass the Hash</div>
+                <div style="font-size:0.75rem; color:#f97316; margin-top:4px;">● Alert Triggered</div>
+              </td>
+              <td>
+                <div class="badge-mitre">T1071: Web Protocols</div>
+                <div style="font-size:0.75rem; color:#f59e0b; margin-top:4px;">● Monitored (Sysmon 3)</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Incident Detail / Triage Modal -->
+  <div class="modal-backdrop" id="incident-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h2 id="modal-title" style="font-size:1.2rem; font-weight:700; color:var(--text-primary);">Incident Investigation Details</h2>
+          <p id="modal-subtitle" style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">INC-20260821-001 • Severity: High</p>
+        </div>
+        <button class="modal-close-btn" id="modal-close" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-content">
+        <!-- Content inserted dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="soc-footer">
+    <p>Splunk SIEM Detection Engineering Lab • Built with ❤️ for SOC Analysts, Detection Engineers &amp; Threat Hunters</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

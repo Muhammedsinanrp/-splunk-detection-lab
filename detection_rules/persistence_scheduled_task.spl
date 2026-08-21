@@ -1,0 +1,28 @@
+# ==============================================================================
+# Detection Rule: Persistence via Suspicious Scheduled Task Creation
+# MITRE ATT&CK: T1053.005 (Scheduled Task/Job: Scheduled Task)
+# Severity: High | Tactic: Persistence / Privilege Escalation
+# Target Data Sources: Windows Security Event Log (4698) & Sysmon (Event 1 Process Creation)
+# ==============================================================================
+
+# --- Description ---
+# Threat actors frequently establish persistence by creating automated scheduled tasks 
+# running under SYSTEM or elevated user privileges. This rule detects task creation via 
+# `schtasks.exe` command line flags or native Windows Event ID 4698 (A scheduled task was created).
+
+# --- Splunk Query (SPL) ---
+(
+  (index=wineventlog (sourcetype="WinEventLog:Security" OR sourcetype="XmlWinEventLog:Security") EventCode=4698)
+  OR
+  (index=sysmon (sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" OR sourcetype="WinEventLog:Microsoft-Windows-Sysmon/Operational") 
+   EventCode=1 (Image="*\\schtasks.exe" OR OriginalFileName="schtasks.exe") CommandLine="*/create*")
+)
+| eval Process_Cmd = coalesce(CommandLine, TaskContent, "Unknown")
+| eval User_Name = coalesce(SubjectUserName, User, Account_Name)
+| eval Host_Name = coalesce(ComputerName, Computer, host)
+| table _time, Host_Name, User_Name, Process_Cmd, TaskName
+| rename Host_Name as "Endpoint", User_Name as "Created By", Process_Cmd as "Task Details"
+
+# --- False Positives & Tuning ---
+# 1. Software update tasks installed by legitimate software installers (e.g. Google Update, Adobe).
+#    Mitigation: Check TaskName naming convention and parent process hierarchy.

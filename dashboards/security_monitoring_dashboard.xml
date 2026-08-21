@@ -1,59 +1,193 @@
-<!--
-Security Monitoring Dashboard - Splunk Simple XML
-
-Replace this with your actual dashboard export from:
-Splunk Web > Dashboards > [Your Dashboard] > Edit > Source
-
-Panels to include:
-  1. Failed Logins Over Time      -> timechart count by src_ip on EventCode=4625
-  2. Top Attack Sources           -> top limit=10 Source_Network_Address
-  3. Lateral Movement Alerts      -> search on "Lateral Movement Detected" notable events
-  4. Privilege Escalation Alerts  -> search on "Privilege Escalation Detected" notable events
-  5. Outbound Connections Top 10  -> top limit=10 DestinationIp
-  6. Event Code Distribution      -> chart count by EventCode
--->
-<form>
-  <label>Security Monitoring</label>
-  <fieldset submitButton="false">
-    <input type="time" token="time_tok">
-      <label>Time Range</label>
+<form version="1.1" theme="dark">
+  <label>SOC Security Monitoring &amp; Threat Detection Center</label>
+  <description>Real-time threat monitoring, lateral movement correlation, and endpoint telemetry analytics</description>
+  
+  <fieldset submitButton="true" autoRun="true">
+    <input type="time" token="time_range">
+      <label>Time Window</label>
       <default>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </default>
     </input>
+    <input type="dropdown" token="selected_host">
+      <label>Target Host</label>
+      <choice value="*">All Hosts</choice>
+      <default>*</default>
+      <fieldForLabel>host</fieldForLabel>
+      <fieldForValue>host</fieldForValue>
+      <search>
+        <query>index=wineventlog OR index=sysmon | stats count by host</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
   </fieldset>
+
+  <!-- ROW 1: KPI Single Value Metrics -->
   <row>
     <panel>
-      <title>Failed Logins Over Time</title>
+      <single>
+        <title>Total Security Events Ingested</title>
+        <search>
+          <query>index=wineventlog OR index=sysmon host="$selected_host$" | stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+          <refresh>1m</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0x006d9c"]</option>
+        <option name="underLabel">Events Ingested</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Failed Authentication Attempts (4625)</title>
+        <search>
+          <query>index=wineventlog EventCode=4625 host="$selected_host$" | stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+          <refresh>1m</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[10,50]</option>
+        <option name="underLabel">Failed Logons</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Active High &amp; Critical Alerts</title>
+        <search>
+          <query>(index=wineventlog EventCode=4672) OR (index=sysmon EventCode=10 TargetImage="*lsass.exe*") host="$selected_host$" | stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+          <refresh>1m</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[1,5]</option>
+        <option name="underLabel">Notable Events</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Unique Attacking Source IPs</title>
+        <search>
+          <query>index=wineventlog EventCode=4625 host="$selected_host$" | stats dc(IpAddress) as count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+          <refresh>1m</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[2,10]</option>
+        <option name="underLabel">Offender IPs</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <!-- ROW 2: Failed Logins Timeline & Top Attack Sources -->
+  <row>
+    <panel>
+      <title>Panel 1: Failed Logins Over Time (Brute Force Velocity)</title>
       <chart>
         <search>
-          <query>index=wineventlog sourcetype=WinEventLog:Security EventCode=4625 | timechart count</query>
-          <earliest>$time_tok.earliest$</earliest>
-          <latest>$time_tok.latest$</latest>
+          <query>index=wineventlog EventCode=4625 host="$selected_host$" | timechart span=15m count by IpAddress usenull=f useother=f</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="charting.chart">line</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.axisY.title">Failed Logon Count</option>
+        <option name="charting.axisX.title">Time (UTC)</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.legend.placement">bottom</option>
       </chart>
     </panel>
     <panel>
-      <title>Top Attack Sources</title>
+      <title>Panel 2: Top Attack Sources (By Volume &amp; Target User Accounts)</title>
       <table>
         <search>
-          <query>index=wineventlog sourcetype=WinEventLog:Security EventCode=4625 | top limit=10 Source_Network_Address</query>
-          <earliest>$time_tok.earliest$</earliest>
-          <latest>$time_tok.latest$</latest>
+          <query>index=wineventlog EventCode=4625 host="$selected_host$" 
+| stats count as "Failed Attempts", dc(Account_Name) as "Unique Accounts Targeted", values(Account_Name) as "Account List", latest(_time) as "Last Seen" by IpAddress
+| eval "Last Seen" = strftime('Last Seen', "%Y-%m-%d %H:%M:%S")
+| sort - "Failed Attempts"
+| head 10</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="dataOverlayMode">heatmap</option>
       </table>
     </panel>
   </row>
+
+  <!-- ROW 3: Lateral Movement & Privilege Escalation Alerts -->
   <row>
     <panel>
-      <title>Event Code Distribution</title>
+      <title>Panel 3: Lateral Movement Correlation Queue</title>
+      <table>
+        <search>
+          <query>index=wineventlog (EventCode=4625 OR EventCode=4624) Logon_Type IN (3, 10) host="$selected_host$"
+| eval Target_Host = coalesce(ComputerName, host)
+| eval Attacker_IP = coalesce(IpAddress, Source_Network_Address)
+| transaction Account_Name maxspan=10m
+| where mvcount(EventCode) > 1 AND mvcount(Target_Host) > 1
+| search EventCode=4625 AND EventCode=4624
+| table _time, Account_Name, Attacker_IP, Target_Host, duration, EventCode
+| rename Account_Name as "Compromised Account", Attacker_IP as "Attacker IP", Target_Host as "Target Machines", duration as "Duration (s)"</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Panel 4: Privilege Escalation &amp; Admin Rights Abuse</title>
+      <table>
+        <search>
+          <query>index=wineventlog EventCode=4672 NOT Account_Name IN ("SYSTEM", "LOCAL SERVICE", "NETWORK SERVICE", "ANONYMOUS LOGON", "*$") host="$selected_host$"
+| lookup user_privilege_lookup Account_Name OUTPUT Department, Privilege_Level
+| where Privilege_Level != "DomainAdmin" AND Privilege_Level != "LocalAdmin"
+| table _time, Account_Name, Department, Privilege_Level, host, PrivilegeList
+| rename Account_Name as "User Account", host as "Host", PrivilegeList as "Privileges Assigned"</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+      </table>
+    </panel>
+  </row>
+
+  <!-- ROW 4: Outbound C2 Traffic & Security Event Code Distribution -->
+  <row>
+    <panel>
+      <title>Panel 5: Top Outbound Connections (Sysmon Event 3 C2 Egress)</title>
       <chart>
         <search>
-          <query>index=wineventlog sourcetype=WinEventLog:Security | chart count by EventCode</query>
-          <earliest>$time_tok.earliest$</earliest>
-          <latest>$time_tok.latest$</latest>
+          <query>index=sysmon EventCode=3 Initiated=true host="$selected_host$"
+| top limit=10 DestinationIp by Image</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.legend.placement">right</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Panel 6: Security &amp; Sysmon Event Code Distribution</title>
+      <chart>
+        <search>
+          <query>(index=wineventlog OR index=sysmon) host="$selected_host$" | chart count by EventCode</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
         <option name="charting.chart">pie</option>
       </chart>

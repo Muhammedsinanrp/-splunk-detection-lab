@@ -1,9 +1,31 @@
-```
-index=wineventlog sourcetype=WinEventLog:Security 
-(EventCode=4625 OR EventCode=4624)
-| transaction Account_Name maxspan=5m
-| where mvcount(EventCode) > 1
+# ==============================================================================
+# Detection Rule: Lateral Movement via Remote Services (SMB / RDP)
+# MITRE ATT&CK: T1021.002 (SMB/Windows Admin Shares), T1021.001 (Remote Desktop Protocol)
+# Severity: High | Tactic: Lateral Movement
+# Target Data Sources: Windows Security Event Log (EventCode 4624, 4625)
+# ==============================================================================
+
+# --- Description ---
+# Detects scenarios where a single user account experiences an authentication failure 
+# followed by successful authentications across multiple distinct target workstations/servers 
+# within a tight timeframe (5-10 minutes). This pattern is characteristic of automated lateral
+# movement tools (e.g., CrackMapExec, PSExec, WMIExec, Impacket).
+
+# --- Splunk Query (SPL) ---
+index=wineventlog (sourcetype="WinEventLog:Security" OR sourcetype="XmlWinEventLog:Security")
+(EventCode=4625 OR EventCode=4624) Logon_Type IN (3, 10)
+NOT Account_Name IN ("SYSTEM", "ANONYMOUS LOGON", "*$")
+| eval Target_Host = coalesce(ComputerName, host, Computer)
+| eval Source_IP = coalesce(IpAddress, Source_Network_Address, src_ip)
+| transaction Account_Name maxspan=10m maxpause=2m
+| where mvcount(EventCode) > 1 AND mvcount(Target_Host) > 1
 | search EventCode=4625 AND EventCode=4624
-| table _time, Account_Name, Workstation_Name, Source_Network_Address, EventCode
-| rename Account_Name as "User Account", Workstation_Name as "Target Machine"
-```
+| eval duration_sec = duration
+| table _time, Account_Name, Source_IP, Target_Host, duration_sec, EventCode, Logon_Type
+| rename Account_Name as "Compromised User", Source_IP as "Attacker IP", Target_Host as "Target Machines"
+
+# --- False Positives & Tuning ---
+# 1. Vulnerability scanners (e.g. Nessus, Qualys) performing authenticated network sweeps.
+#    Mitigation: Whitelist approved security scanner IP ranges in `allowed_scanners_lookup`.
+# 2. IT Administrators logging into multiple hosts sequentially.
+#    Mitigation: Cross-reference with Change Management or verify user group membership.

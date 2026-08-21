@@ -1,0 +1,30 @@
+# ==============================================================================
+# Detection Rule: Pass-the-Hash / NTLM Network Authentication Anomaly
+# MITRE ATT&CK: T1550.002 (Use Alternate Authentication Material: Pass the Hash)
+# Severity: High | Tactic: Lateral Movement / Defense Evasion
+# Target Data Sources: Windows Security Event Log (EventCode 4624)
+# ==============================================================================
+
+# --- Description ---
+# Pass-the-Hash (PtH) attacks use captured NTLM password hashes instead of the cleartext password
+# to authenticate over the network (Logon Type 3: Network Logon).
+# In a healthy Kerberos-enabled domain environment, modern Windows workstations authenticate via 
+# Kerberos. NTLM authentication (specifically Package_Name=NTLM) with Key_Length=0 or 
+# AuthenticationPackageName=NTLM V1/V2 for administrative or unexpected accounts indicates PtH.
+
+# --- Splunk Query (SPL) ---
+index=wineventlog (sourcetype="WinEventLog:Security" OR sourcetype="XmlWinEventLog:Security")
+EventCode=4624 Logon_Type=3
+AuthenticationPackageName=NTLM
+NOT TargetUserName IN ("ANONYMOUS LOGON", "*$")
+| eval Source_IP = coalesce(IpAddress, Source_Network_Address, "Unknown")
+| eval Target_User = coalesce(TargetUserName, Account_Name)
+| eval Target_Host = coalesce(ComputerName, host, Computer)
+| lookup user_privilege_lookup Account_Name AS Target_User OUTPUT Department, Privilege_Level
+| where Privilege_Level IN ("DomainAdmin", "LocalAdmin") OR isnotnull(Privilege_Level)
+| table _time, Target_Host, Target_User, Privilege_Level, Source_IP, LogonProcessName, AuthenticationPackageName, WorkstationName
+| rename Target_Host as "Target Machine", Target_User as "Compromised User", Source_IP as "Attacker IP"
+
+# --- False Positives & Tuning ---
+# 1. Legacy network applications or file shares that do not support Kerberos.
+#    Mitigation: Filter known legacy file share IPs or configure NTLM auditing baseline.

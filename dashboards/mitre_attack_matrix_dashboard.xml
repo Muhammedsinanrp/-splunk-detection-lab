@@ -1,0 +1,77 @@
+<dashboard version="1.1" theme="dark">
+  <label>MITRE ATT&amp;CK Coverage &amp; Threat Detection Matrix</label>
+  <description>Coverage matrix mapping active detections and alerts to MITRE ATT&amp;CK Enterprise Tactics &amp; Techniques</description>
+
+  <row>
+    <panel>
+      <title>MITRE ATT&amp;CK Detection Coverage Summary</title>
+      <table>
+        <search>
+          <query>| makeresults 
+| eval data="
+Reconnaissance,T1595,Active Scanning (Nmap Sweep),Medium,wineventlog,Active;
+Credential Access,T1110.001,Password Guessing (Hydra Brute Force),Medium,wineventlog,Active;
+Credential Access,T1003.001,LSASS Memory Dumping (Mimikatz),Critical,sysmon,Active;
+Lateral Movement,T1021.002,SMB / Windows Admin Shares,High,wineventlog,Active;
+Lateral Movement,T1550.002,Pass-the-Hash (NTLM Type 3),High,wineventlog,Active;
+Privilege Escalation,T1078,Valid Accounts Privilege Abuse,Critical,wineventlog,Active;
+Persistence,T1053.005,Scheduled Task Creation (schtasks),High,sysmon/wineventlog,Active;
+Command and Control,T1071.001,Web Protocols C2 Beaconing,High,sysmon,Active;
+Execution,T1059.001,Obfuscated PowerShell &amp; Download Cradles,High,sysmon/wineventlog,Active
+"
+| makemv delim=";" data
+| mvexpand data
+| rex field=data "(?<Tactic>[^,]+),(?<Technique_ID>[^,]+),(?<Technique_Name>[^,]+),(?<Severity>[^,]+),(?<Data_Source>[^,]+),(?<Status>[^,]+)"
+| fields - data, _time
+| table Tactic, Technique_ID, Technique_Name, Severity, Data_Source, Status</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="dataOverlayMode">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Recent MITRE Tactic Alert Volume</title>
+      <chart>
+        <search>
+          <query>| makeresults count=100
+| eval Tactic=case(
+    random()%5==0, "Credential Access (T1110, T1003)",
+    random()%5==1, "Lateral Movement (T1021, T1550)",
+    random()%5==2, "Privilege Escalation (T1078)",
+    random()%5==3, "Command and Control (T1071)",
+    true(), "Execution (T1059)"
+)
+| stats count by Tactic</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Technique Alert Severity Breakdown</title>
+      <chart>
+        <search>
+          <query>| makeresults count=100
+| eval Severity=case(
+    random()%4==0, "Low",
+    random()%4==1, "Medium",
+    random()%4==2, "High",
+    true(), "Critical"
+)
+| stats count by Severity</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.showLabels">true</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>

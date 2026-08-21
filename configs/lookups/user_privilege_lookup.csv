@@ -1,0 +1,11 @@
+Account_Name,Department,Privilege_Level,Expected_Logon_Type,Notes
+Administrator,IT Infrastructure,DomainAdmin,2;10,Built-in Domain Admin account
+krbtgt,System,System,N/A,Key Distribution Center Service Account
+svc_backup,IT Backup,ServiceAccount,4;5,Automated VSS and DB backup service account
+svc_sql,Database,ServiceAccount,4;5,MSSQL Database Server service account
+john.doe,Finance,Standard,2;10,Senior Financial Analyst
+jane.smith,Human Resources,Standard,2;10,HR Operations Specialist
+alice.wong,Marketing,Standard,2;10,Marketing Director
+bob.martinez,Sales,Standard,2;10,Account Executive
+admin_local,IT Support,LocalAdmin,2;10,Local workstation tier-1 helpdesk admin
+secops_analyst,Security,SecOps,2;10,Security Operations Center Analyst

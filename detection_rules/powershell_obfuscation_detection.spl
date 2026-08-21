@@ -1,0 +1,42 @@
+# ==============================================================================
+# Detection Rule: Suspicious Obfuscated PowerShell & Remote Download Execution
+# MITRE ATT&CK: T1059.001 (PowerShell), T1027 (Obfuscated Files or Information)
+# Severity: High | Tactic: Execution / Defense Evasion
+# Target Data Sources: Sysmon (Event 1) & PowerShell ScriptBlock Logs (Event 4104)
+# ==============================================================================
+
+# --- Description ---
+# Detects malicious PowerShell command-line execution patterns including:
+# - Base64 encoded commands (`-enc`, `-encodedcommand`, `-e`)
+# - Remote script download cradles (`DownloadString`, `DownloadFile`, `Invoke-WebRequest`, `curl`, `wget`)
+# - Execution policy bypass flags (`-ExecutionPolicy Bypass`, `-ep bypass`, `-nop`, `-w hidden`)
+# - Dynamic code execution primitives (`Invoke-Expression`, `IEX`)
+
+# --- Splunk Query (SPL) ---
+(
+  (index=sysmon (sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" OR sourcetype="WinEventLog:Microsoft-Windows-Sysmon/Operational")
+   EventCode=1 (Image="*\\powershell.exe" OR Image="*\\pwsh.exe"))
+  OR
+  (index=wineventlog (sourcetype="WinEventLog:Microsoft-Windows-PowerShell/Operational" OR sourcetype="XmlWinEventLog:Microsoft-Windows-PowerShell/Operational")
+   EventCode=4104)
+)
+| eval Script_Content = lower(coalesce(CommandLine, ScriptBlockText, ""))
+| where (
+    like(Script_Content, "%-enc%") OR 
+    like(Script_Content, "%-encodedcommand%") OR 
+    like(Script_Content, "%downloadstring%") OR 
+    like(Script_Content, "%invoke-expression%") OR 
+    like(Script_Content, "%iex%") OR 
+    like(Script_Content, "%bypass%") OR 
+    like(Script_Content, "%windowstyle hidden%") OR 
+    like(Script_Content, "%-nop%")
+  )
+| eval Host_Name = coalesce(Computer, ComputerName, host)
+| eval User_Name = coalesce(User, SubjectUserName, "Unknown")
+| eval Process_Name = coalesce(Image, "PowerShell ScriptBlock")
+| table _time, Host_Name, User_Name, Process_Name, CommandLine, ScriptBlockText
+| rename Host_Name as "Endpoint", User_Name as "User", Process_Name as "Execution Source"
+
+# --- False Positives & Tuning ---
+# 1. SCCM, Intune, or enterprise administrative automation scripts.
+#    Mitigation: Check signing certificates and execution parent process (e.g. CcmExec.exe).

@@ -1,187 +1,109 @@
-# 🛡️ SIEM Detection Lab — Splunk Enterprise
+# 🛡️ SIEM Threat Detection & Incident Response Lab — Splunk Enterprise
 
-**A Hands-on Security Operations Center (SOC) Lab for Detection Engineering & Threat Monitoring**
+[![Splunk Enterprise](https://img.shields.io/badge/SIEM-Splunk_Enterprise_9.2-black?style=for-the-badge&logo=splunk&logoColor=white)](https://www.splunk.com/)
+[![MITRE ATT&CK](https://img.shields.io/badge/Framework-MITRE_ATT%26CK_v14-red?style=for-the-badge)](https://attack.mitre.org/)
+[![Endpoint Telemetry](https://img.shields.io/badge/Endpoint-Sysmon_%2B_WinEventLog-blue?style=for-the-badge&logo=windows&logoColor=white)](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
+[![Offensive Emulation](https://img.shields.io/badge/Offensive-Kali_Linux-557C94?style=for-the-badge&logo=kalilinux&logoColor=white)](https://www.kali.org/)
+[![Docker Compose](https://img.shields.io/badge/Deployment-Docker_Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](docker-compose.yml)
 
-![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)
-![GitHub](https://img.shields.io/badge/GitHub-Follow-black)
+> **A production-grade Security Operations Center (SOC) Detection Engineering & Threat Monitoring Lab simulating real-world adversary TTPs, correlating Windows Security & Sysmon telemetry, and executing end-to-end incident response.**
 
 ---
 
 ## 📌 Project Overview
 
-This project demonstrates my ability to design, deploy, and operate a Security Information and Event Management (SIEM) environment using **Splunk Enterprise**. The lab simulates a real-world SOC environment where I:
+This project showcases the design, deployment, and operational execution of an enterprise **Security Information and Event Management (SIEM)** detection pipeline using **Splunk Enterprise**. 
 
-- Ingested Windows Security Event Logs and Sysmon telemetry
-- Developed custom Splunk correlation rules to detect **lateral movement** and **privilege escalation**
-- Created real-time alerts and a security monitoring dashboard
-- Simulated attacks using Kali Linux to validate detection rules
-
-**The goal** was to bridge the gap between offensive knowledge (CEH, CPT) and defensive detection engineering — turning attacker TTPs into actionable Splunk alerts.
+Bridging offensive tradecraft with defensive detection engineering, this lab demonstrates:
+1. **High-Fidelity Endpoint Telemetry Ingestion:** Windows Security Event Logs (4624, 4625, 4672, 4688, 4732) and Microsoft Sysmon (Events 1, 3, 10, 11) via Splunk Universal Forwarder.
+2. **Detection Engineering & Threat Hunting:** Custom Search Processing Language (SPL) correlation searches with automated alert suppression, threshold calibration, and MITRE ATT&CK mapping.
+3. **Real-Time SOC Dashboarding:** 6-panel real-time operational dashboard with KPI single-value status cards and MITRE coverage matrices.
+4. **Adversary Emulation:** Controlled simulations of password spraying, lateral movement, LSASS memory dumping (Mimikatz), and C2 beaconing.
+5. **NIST-Standard Incident Response:** Complete incident triage reports, forensic root-cause analysis, and actionable SOC analyst playbooks.
 
 ---
 
 ## 🏗️ Lab Architecture
 
-| Component | Role | IP Address |
-|---|---|---|
-| **Splunk Enterprise** | SIEM / Indexer / Search Head | `192.168.x.x` (Ubuntu/Windows Host) |
-| **Windows Target** | Log Source (Security Events + Sysmon) | `192.168.x.x` |
-| **Kali Linux** | Attacker Machine (Simulation) | `192.168.x.x` |
-| **Sysmon** | High-fidelity endpoint telemetry | Installed on Windows Target |
-| **Splunk Universal Forwarder** | Log shipping to Splunk Indexer | Installed on Windows Target |
-
-### Network Diagram (Conceptual)
-
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    VirtualBox / VMware                       │
-│                                                               │
-│  ┌──────────────┐     ┌──────────────────────────────┐       │
-│  │  Kali Linux  │────▶│    Windows Target (Win10/11)  │       │
-│  │  (Attacker)  │     │  • Security Event Logs        │       │
-│  │              │     │  • Sysmon (SwiftOnSecurity)   │       │
-│  └──────────────┘     │  • Splunk Universal Forwarder │       │
-│         │              └──────────────┬───────────────┘       │
-│         │                             │                       │
-│         │                     ┌───────▼───────────────┐       │
-│         │                     │   Splunk Enterprise    │       │
-│         └────────────────────▶│   (Indexer + Search)   │       │
-│                                │   Port 9997 (Ingest)   │       │
-│                                │   Port 8000 (Web UI)   │       │
-│                                └────────────────────────┘       │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 SOC Detection Lab Environment                           │
+│                                                                                         │
+│   ┌───────────────────────────┐                       ┌──────────────────────────────┐  │
+│   │    Kali Linux Attacker    │                       │    Windows Target Server     │  │
+│   │       192.168.1.100       │                       │        192.168.1.50          │  │
+│   │  • Nmap Reconnaissance    │─────── Attack ───────▶│  • Windows Security Logs     │  │
+│   │  • Hydra Password Spray   │      Simulation       │  • Sysmon (SwiftOnSecurity)  │  │
+│   │  • CrackMapExec / SMB     │                       │  • Splunk Universal Fwd      │  │
+│   │  • Mimikatz / Metasploit  │                       └──────────────┬───────────────┘  │
+│   └───────────────────────────┘                                      │                  │
+│                                                                      │ Ingest (Port 9997)
+│                                                                      ▼                  │
+│                                                       ┌──────────────────────────────┐  │
+│                                                       │   Splunk Enterprise (SIEM)   │  │
+│                                                       │        192.168.1.10          │  │
+│                                                       │  • Indexes: winevent, sysmon │  │
+│                                                       │  • SPL Correlation Searches  │  │
+│                                                       │  • Real-Time Alert Engine    │  │
+│                                                       │  • SOC Security Dashboard    │  │
+│                                                       │    (Web Console Port 8000)   │  │
+│                                                       └──────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🛠️ Tools & Technologies
+## 🔍 Detection Engineering Rules Matrix
 
-| Category | Tools |
-|---|---|
-| **SIEM** | Splunk Enterprise (Free 60-day Trial) |
-| **Virtualization** | VirtualBox / VMware |
-| **Endpoint Logging** | Sysmon (SwiftOnSecurity config) |
-| **Log Forwarding** | Splunk Universal Forwarder |
-| **Attack Simulation** | Kali Linux (Nmap, Hydra, Mimikatz, Metasploit) |
-| **Detection Queries** | SPL (Search Processing Language) |
-| **Frameworks** | MITRE ATT&CK, Cyber Kill Chain |
+All correlation searches are written in Splunk SPL, mapped to MITRE ATT&CK techniques, and configured with scheduled execution and alert suppression in [`configs/savedsearches.conf`](configs/savedsearches.conf).
 
----
-
-## 🔍 Detection Rules Implemented
-
-### 1. 🚨 Lateral Movement Detection
-**Objective:** Detect attackers moving laterally across the domain using compromised credentials.
-**MITRE Mapping:** `T1021` — Remote Services
-**Logic:** Correlates a failed login (Event 4625) followed by a successful login (Event 4624) on a **different** machine within a short time window.
-See [`detection_rules/lateral_movement_detection.spl`](detection_rules/lateral_movement_detection.spl)
-
-**Alert Configuration:**
-- **Name:** `Lateral Movement Detected`
-- **Severity:** High
-- **Action:** Send email alert + Create notable event
-- **Suppression:** 1 hour (per user)
+| Detection Rule | MITRE ATT&CK | Log Source | Severity | Description & File |
+|---|---|---|---|---|
+| **Lateral Movement** | `T1021.002` Remote Services | `WinEventLog:Security` | 🔴 High | Correlates failed logon (4625) followed by multi-host success (4624) within 10m. [`lateral_movement_detection.spl`](detection_rules/lateral_movement_detection.spl) |
+| **Privilege Escalation** | `T1078` Valid Accounts | `WinEventLog:Security` | 🔴 Critical | Flags Event 4672 (Special Privileges) for non-administrative accounts via lookup. [`privilege_escalation_detection.spl`](detection_rules/privilege_escalation_detection.spl) |
+| **Brute Force / Password Spray** | `T1110.001` Brute Force | `WinEventLog:Security` | 🟡 Medium | Identifies velocity spikes (≥5 failed logons or ≥3 unique accounts per IP). [`brute_force_detection.spl`](detection_rules/brute_force_detection.spl) |
+| **Credential Dumping** | `T1003.001` LSASS Memory | `Sysmon:Operational` | 🔴 Critical | Detects unapproved processes requesting handle access `0x1010` to `lsass.exe`. [`credential_dumping_detection.spl`](detection_rules/credential_dumping_detection.spl) |
+| **C2 Network Beaconing** | `T1071.001` Web Protocols | `Sysmon:Operational` | 🟠 High | Discovers periodic outbound connections to external public IPs with low jitter. [`c2_beaconing_detection.spl`](detection_rules/c2_beaconing_detection.spl) |
+| **Pass-the-Hash (PtH)** | `T1550.002` Pass the Hash | `WinEventLog:Security` | 🟠 High | Identifies NTLM Type 3 network authentications bypassing Kerberos armoring. [`pass_the_hash_detection.spl`](detection_rules/pass_the_hash_detection.spl) |
+| **Scheduled Task Persistence** | `T1053.005` Scheduled Task | `Sysmon` / `Security` | 🟠 High | Detects task creation via `schtasks.exe /create` or Event 4698. [`persistence_scheduled_task.spl`](detection_rules/persistence_scheduled_task.spl) |
+| **Obfuscated PowerShell** | `T1059.001` PowerShell | `Sysmon` / `PowerShell` | 🟠 High | Flags Base64 `-enc`, dynamic `IEX`, and remote `DownloadString` cradles. [`powershell_obfuscation_detection.spl`](detection_rules/powershell_obfuscation_detection.spl) |
 
 ---
 
-### 2. 👑 Privilege Escalation Detection
-**Objective:** Detect when a user is assigned special privileges (potential admin access abuse).
-**MITRE Mapping:** `T1078` — Valid Accounts
-**Logic:** Alert when Event ID 4672 (Special Privileges Assigned) occurs immediately after a logon from a **non-standard** or **sensitive** account.
-See [`detection_rules/privilege_escalation_detection.spl`](detection_rules/privilege_escalation_detection.spl)
+## 📊 Security Dashboards
 
-**Alert Configuration:**
-- **Name:** `Privilege Escalation Detected`
-- **Severity:** Critical
-- **Action:** Send email alert + Create notable event
-- **Suppression:** 30 minutes (per user)
+### 1. Splunk Simple XML Dashboard
+The complete XML dashboard export is available in [`dashboards/security_monitoring_dashboard.xml`](dashboards/security_monitoring_dashboard.xml) and includes:
+- **KPI Cards:** Ingested Security Events, Failed Logons, Active Alerts, Monitored Forwarders.
+- **Failed Logons Over Time:** Velocity area chart tracking brute-force bursts.
+- **Top Attack Sources:** Offender IP table with target account breakdown.
+- **Notable Alert Queues:** Real-time correlation tables for lateral movement and privilege escalation.
+- **Outbound C2 Connections:** Top external destinations by process.
+- **Event Distribution:** Breakdown of Windows Event Codes.
 
----
+### 2. Interactive Web-Based SOC Console Showcase
+This repository includes a standalone web-based SOC SIEM Simulator located in [`web_showcase/`](web_showcase/):
+- **Live Adversary Emulation:** Trigger simulated brute-force, lateral movement, Mimikatz, and full kill chain scenarios in real time.
+- **Interactive SPL Search Bar:** Test and evaluate search queries directly in the browser against sample telemetry.
+- **Incident Investigation Modals:** Inspect raw JSON logs, timeline reconstructions, and playbook response actions.
 
-### 3. 🔓 Brute Force Attack Detection
-**Objective:** Detect password spraying or brute-force attacks against domain accounts.
-**MITRE Mapping:** `T1110` — Brute Force
-See [`detection_rules/brute_force_detection.spl`](detection_rules/brute_force_detection.spl)
-
-**Alert Configuration:**
-- **Name:** `Brute Force Attempt Detected`
-- **Severity:** Medium
-- **Action:** Send email alert
-- **Suppression:** 15 minutes (per source IP)
+To launch the web showcase, simply open [`web_showcase/index.html`](web_showcase/index.html) in any modern browser.
 
 ---
 
-### 4. 💀 Credential Dumping (Mimikatz) Detection
-**Objective:** Detect attackers using Mimikatz to dump credentials from memory.
-**MITRE Mapping:** `T1003` — Credential Dumping
-**Logic:** Alert on suspicious process access to LSASS (Sysmon Event 10).
-See [`detection_rules/credential_dumping_detection.spl`](detection_rules/credential_dumping_detection.spl)
+## ⚔️ Adversary Emulation & Telemetry Datasets
 
-**Alert Configuration:**
-- **Name:** `Potential Credential Dumping Detected`
-- **Severity:** Critical
-- **Action:** Send email alert + Create notable event
+To validate detection queries without standing up a physical lab, ingestible telemetry and simulation scripts are provided:
 
----
-
-### 5. 🔌 Suspicious Outbound Traffic (C2 Beaconing)
-**Objective:** Detect potential Command & Control (C2) beaconing from compromised hosts.
-**MITRE Mapping:** `T1071` — Application Layer Protocol
-See [`detection_rules/c2_beaconing_detection.spl`](detection_rules/c2_beaconing_detection.spl)
-
----
-
-## 📊 Security Monitoring Dashboard
-
-I built a custom **"Security Monitoring"** dashboard in Splunk providing real-time visibility into:
-
-| Dashboard Panel | Purpose |
-|---|---|
-| **Failed Logins Over Time** | Track brute-force patterns |
-| **Top Attack Sources** | Identify repeat offender IPs |
-| **Lateral Movement Alerts** | View correlation rule hits |
-| **Privilege Escalation Alerts** | View privilege abuse attempts |
-| **Outbound Connections (Top 10)** | Spot suspicious egress traffic |
-| **Event Code Distribution** | Overview of security events |
-
-Dashboard export: [`dashboards/security_monitoring_dashboard.xml`](dashboards/security_monitoring_dashboard.xml)
-
----
-
-## ⚔️ Attack Simulation
-
-To validate my detection rules, I simulated real-world attacks against the Windows target:
-
-| Attack | Tool | Generated Events | Detection |
-|---|---|---|---|
-| Network Reconnaissance | Nmap | Firewall Logs, Port Scan | Port Scan Alert |
-| SMB Brute Force | Hydra | 4625 (Failed Login) | Brute Force Alert |
-| RDP Brute Force | Hydra | 4625, 4740 | Brute Force Alert |
-| Password Hash Dumping | Mimikatz | 4624, 4672 | Credential Dumping Alert |
-| Remote Code Execution | Metasploit PSExec | 4624, 4672, 4688 | Lateral Movement Alert |
-| Pass-the-Hash | Mimikatz | 4624 (NTLM) | Lateral Movement Alert |
-
----
-
-## 🔎 Sample Investigation: Lateral Movement
-
-**Alert Triggered:** `Lateral Movement Detected` for user `john.doe`
-
-**Investigation Steps:**
-1. **Check Source IP:** `192.168.1.100` (Kali Linux)
-2. **Review Timeline:**
-   - `10:05:12` — Failed login (4625) from `192.168.1.100` to `FILE-SRV-01`
-   - `10:05:45` — Successful login (4624) from `192.168.1.100` to `FILE-SRV-01`
-   - `10:06:10` — Successful login (4624) from `192.168.1.100` to `DC-01`
-3. **Check Post-Compromise Activity:**
-   - Event 4672 (Special Privileges) triggered on `DC-01`
-   - Suspicious process (PowerShell) executed on `DC-01`
-4. **Response Actions:**
-   - Force password reset for `john.doe`
-   - Block source IP `192.168.1.100`
-   - Isolate `DC-01` for forensic review
-
-Full write-up: [`incident_reports/lateral_movement_incident.md`](incident_reports/lateral_movement_incident.md)
+- **Automated Kali Attack Suite:** [`attack_simulations/run_simulations.sh`](attack_simulations/run_simulations.sh)
+- **Windows Endpoint Telemetry Generator:** [`attack_simulations/simulate_attacks_windows.ps1`](attack_simulations/simulate_attacks_windows.ps1)
+- **Ingestible Sample Logs:**
+  - [`wineventlog_security_sample.json`](attack_simulations/sample_telemetry/wineventlog_security_sample.json) (Events 4624, 4625, 4672, 4732)
+  - [`sysmon_operational_sample.json`](attack_simulations/sample_telemetry/sysmon_operational_sample.json) (Sysmon Events 1, 3, 10, 11)
+- **Captured Attack Logs:**
+  - [`hydra_brute_force_logs.txt`](attack_simulations/hydra_brute_force_logs.txt)
+  - [`mimikatz_logs.txt`](attack_simulations/mimikatz_logs.txt)
+  - [`nmap_scan_logs.txt`](attack_simulations/nmap_scan_logs.txt)
 
 ---
 
@@ -189,51 +111,102 @@ Full write-up: [`incident_reports/lateral_movement_incident.md`](incident_report
 
 ```
 splunk-detection-lab/
+├── README.md                                # Master documentation & architecture guide
+├── docker-compose.yml                       # Splunk Enterprise 1-command container setup
 │
-├── README.md                              # This file
-├── detection_rules/
-│   ├── lateral_movement_detection.spl
-│   ├── privilege_escalation_detection.spl
-│   ├── brute_force_detection.spl
-│   ├── credential_dumping_detection.spl
-│   └── c2_beaconing_detection.spl
+├── configs/                                 # Production Splunk Configuration Stanzas
+│   ├── inputs.conf                          # Windows Event Log, Sysmon & PowerShell inputs
+│   ├── outputs.conf                         # Forwarder tcpout target configuration
+│   ├── indexes.conf                         # Custom wineventlog and sysmon index definitions
+│   ├── props.conf                           # CIM-compliant field aliases and sourcetype parsing
+│   ├── transforms.conf                      # Lookup definitions (user privilege baseline)
+│   ├── savedsearches.conf                   # Automated correlation alert definitions & schedules
+│   └── lookups/
+│       └── user_privilege_lookup.csv        # Baseline user privilege mapping table
 │
-├── dashboards/
-│   └── security_monitoring_dashboard.xml
+├── detection_rules/                         # Production SPL Detection Rules
+│   ├── lateral_movement_detection.spl       # T1021.002 - SMB/RDP Cross-Host Credential Reuse
+│   ├── privilege_escalation_detection.spl   # T1078 / T1068 - Unauthorized Admin Elevation
+│   ├── brute_force_detection.spl            # T1110.001 - Password Spray / Brute Force Thresholds
+│   ├── credential_dumping_detection.spl     # T1003.001 - LSASS Memory Access (Sysmon Event 10)
+│   ├── c2_beaconing_detection.spl           # T1071.001 - Network Beaconing & Egress Anomaly
+│   ├── pass_the_hash_detection.spl          # T1550.002 - NTLM Logon Type 3 Anomaly
+│   ├── persistence_scheduled_task.spl       # T1053.005 - Suspicious Schtasks Creation
+│   └── powershell_obfuscation_detection.spl # T1059.001 - Encoded PowerShell & Remote Downloads
 │
-├── attack_simulations/
-│   ├── hydra_brute_force_logs.txt
-│   ├── nmap_scan_logs.txt
-│   └── mimikatz_logs.txt
+├── dashboards/                              # Splunk Simple XML Dashboards
+│   ├── security_monitoring_dashboard.xml    # 6-panel real-time SOC monitoring dashboard
+│   └── mitre_attack_matrix_dashboard.xml    # MITRE ATT&CK coverage and alert status matrix
 │
-├── incident_reports/
-│   ├── lateral_movement_incident.md
-│   └── privilege_escalation_incident.md
+├── attack_simulations/                      # Adversary Emulation Scripts & Datasets
+│   ├── run_simulations.sh                   # Automated Kali attack execution runner
+│   ├── simulate_attacks_windows.ps1         # Windows target attack telemetry generator
+│   ├── hydra_brute_force_logs.txt           # Captured Hydra SMB/RDP logs
+│   ├── mimikatz_logs.txt                    # Captured Mimikatz sekurlsa output
+│   ├── nmap_scan_logs.txt                   # Captured Nmap reconnaissance logs
+│   └── sample_telemetry/                    # Raw JSON event logs for instant lab validation
+│       ├── wineventlog_security_sample.json
+│       └── sysmon_operational_sample.json
 │
-└── configs/
-    ├── inputs.conf
-    └── outputs.conf
+├── incident_reports/                        # Real-World SOC Incident Reports (NIST SP 800-61r2)
+│   ├── lateral_movement_incident.md         # Full IR report: T1021 SMB Lateral Movement
+│   ├── privilege_escalation_incident.md     # Full IR report: T1078 Token Elevation & Admin Group
+│   └── credential_dumping_incident.md       # Full IR report: T1003 Mimikatz LSASS Dump
+│
+├── playbooks/                               # SOC Analyst Standard Operating Procedures (SOP)
+│   ├── lateral_movement_playbook.md         # Triage, Containment & Eradication Playbook
+│   ├── privilege_escalation_playbook.md     # Triage & Privilege Revocation Playbook
+│   ├── brute_force_playbook.md              # IP Blacklisting & Credential Lockout Playbook
+│   └── ransomware_early_containment.md      # Emergency Endpoint Isolation Procedure
+│
+├── docs/                                    # Step-by-Step Lab Setup Guides
+│   ├── 01_splunk_setup.md                   # Installing Splunk via Docker / Ubuntu / Windows
+│   ├── 02_sysmon_forwarder_config.md        # Sysmon deployment & Universal Forwarder setup
+│   ├── 03_attack_simulation_guide.md        # Kali Linux attack execution guide
+│   └── 04_detection_tuning_guide.md         # Alert tuning, false positive mitigation & thresholding
+│
+└── web_showcase/                            # Interactive Web-Based SOC SIEM Dashboard
+    ├── index.html                           # Modern dark-mode SOC Analyst Console & Threat Map
+    ├── styles.css                           # Glassmorphism & High-tech SOC aesthetic design
+    └── app.js                              # Interactive SPL Search Engine & Live Simulator
 ```
 
 ---
 
-## 🧠 Skills Demonstrated
+## 🚀 Quick Start Guide
 
-- **SIEM Deployment:** Installed and configured Splunk Enterprise
-- **Log Ingestion:** Set up Splunk Universal Forwarder to stream Windows Event Logs and Sysmon
-- **Detection Engineering:** Wrote custom SPL queries for threat detection
-- **Alert Configuration:** Created real-time alerts with severity and suppression
-- **Dashboarding:** Built a security monitoring dashboard
-- **Attack Simulation:** Used Kali Linux to simulate real-world attacks
-- **Incident Response:** Documented findings and response actions
-- **MITRE ATT&CK Mapping:** Mapped detections to adversary TTPs
+### 1. Launch Splunk Enterprise via Docker
+```bash
+docker-compose up -d
+```
+- Open `http://localhost:8000` (Login: `admin` / `SplunkAdmin2026!`).
+
+### 2. Ingest Sample Data
+1. Navigate to **Settings > Add Data > Upload**.
+2. Select [`wineventlog_security_sample.json`](attack_simulations/sample_telemetry/wineventlog_security_sample.json) with index `wineventlog`.
+3. Select [`sysmon_operational_sample.json`](attack_simulations/sample_telemetry/sysmon_operational_sample.json) with index `sysmon`.
+
+### 3. Load Dashboard
+1. Go to **Dashboards > Create New Dashboard**.
+2. Switch to **Source (XML)** and paste the contents of [`dashboards/security_monitoring_dashboard.xml`](dashboards/security_monitoring_dashboard.xml).
+
+---
+
+## 🧠 Core Competencies Demonstrated
+
+- **SIEM Architecture & Administration:** Splunk Enterprise, Universal Forwarder, index design, data pipeline parsing, and distributed searching.
+- **Detection Engineering:** Threat modeling, advanced SPL query construction, correlation rules, false positive tuning, and alert suppression.
+- **Endpoint Forensics & Telemetry:** In-depth understanding of Windows Event IDs, Sysmon XML schemas, and process execution trees.
+- **Offensive Security Emulation:** Kali Linux adversary simulation (Nmap, Hydra, CrackMapExec, Mimikatz, Metasploit).
+- **Incident Response & Triage:** Root cause investigation, containment workflows, NIST SP 800-61r2 reporting, and SOC analyst playbooks.
+- **Framework Mastery:** MITRE ATT&CK Enterprise Matrix, Cyber Kill Chain, and Common Information Model (CIM).
 
 ---
 
 ## 📚 References & Resources
 
 - [Splunk Enterprise Documentation](https://docs.splunk.com/)
-- [Sysmon — SwiftOnSecurity Config](https://github.com/SwiftOnSecurity/sysmon-config)
-- [MITRE ATT&CK Framework](https://attack.mitre.org/)
-- [Splunk Security Content](https://github.com/splunk/security_content)
-- [Lab-WriteUps — SIEM Use Case Development](https://github.com/Sweatzer/Lab-WriteUps)
+- [Microsoft Sysinternals Sysmon](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
+- [SwiftOnSecurity Sysmon Configuration](https://github.com/SwiftOnSecurity/sysmon-config)
+- [MITRE ATT&CK Enterprise Framework](https://attack.mitre.org/)
+- [NIST Computer Security Incident Handling Guide (SP 800-61r2)](https://csrc.nist.gov/publications/detail/sp/800-61/rev-2/final)

